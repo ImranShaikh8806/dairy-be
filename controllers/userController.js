@@ -102,7 +102,7 @@ const registerUser = async (req, res) => {
 
   // Get user profile
 
-  const loginUser = async (req, res) => {
+const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -115,12 +115,22 @@ const registerUser = async (req, res) => {
         const deliveryBoy = await DeliveryBoy.findOne({ email });
 
         let authUser = user || deliveryBoy;
-        let role = user ? 'user' : (deliveryBoy ? 'DeliveryBoy' : null);
+        let role;
 
         if (!authUser) {
             return res.status(401).json({ message: 'Invalid email or password (User not found).' });
         }
 
+        // 🔹 Determine role based on the user's role field or collection type
+        if (user) {
+            // Check if user has a role field, otherwise default to 'user'
+            role = user.role || 'user';
+        } else if (deliveryBoy) {
+            role = 'DeliveryBoy';
+        }
+
+        console.log("User found:", authUser.email);
+        console.log("Role from database:", role);
         console.log("Stored Password:", authUser.password); // Debugging: Check stored password
         console.log("Entered Password:", password); // Debugging: Check entered password
 
@@ -135,15 +145,30 @@ const registerUser = async (req, res) => {
         // 🔹 Generate token
         const token = jwt.sign({ id: authUser._id, role }, process.env.JWT_SECRET, { expiresIn: '20d' });
 
+        // 🔹 Determine redirect based on role
+        let redirectPath;
+        switch (role.toLowerCase()) {
+            case 'admin':
+                redirectPath = '/adminDashboard';
+                break;
+            case 'deliveryboy':
+                redirectPath = '/deliveryDashboard';
+                break;
+            case 'user':
+            default:
+                redirectPath = '/home';
+                break;
+        }
+
         return res.status(200).json({
             token,
             user: {
                 id: authUser._id,
                 name: authUser.name,
                 email: authUser.email,
-                role,
+                role, // This will now return the actual role from database
             },
-            redirect: role === "DeliveryBoy" ? "/deliveryDashboard" : "/home",
+            redirect: redirectPath,
         });
 
     } catch (error) {

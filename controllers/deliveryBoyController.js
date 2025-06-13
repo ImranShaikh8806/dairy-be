@@ -233,7 +233,7 @@ const Order = require('../models/Order');
 const crypto= require('crypto')
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
-
+const bcrypt = require('bcryptjs');
 
 const generateRandomPassword = () => {
   return crypto.randomBytes(4).toString('hex');
@@ -272,16 +272,16 @@ const createDeliveryBoy = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email already exists" });
     }
 
-    // ✅ Generate and hash the password
-    const generatedPassword = generateRandomPassword();
-    // const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+    // ✅ Use hardcoded password and hash it
+    const defaultPassword = "123456";
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
     // ✅ Create new delivery boy
     const deliveryBoy = new DeliveryBoy({
       name,
       email,
       phone,
-      password:generatedPassword,
+      password: hashedPassword, // ✅ Store hashed password
       pincodes: pincodes || [],
       areas: areas || [],
       maxOrdersPerDay: maxOrdersPerDay || 20,
@@ -290,52 +290,21 @@ const createDeliveryBoy = async (req, res) => {
 
     await deliveryBoy.save();
 
-    // ✅ Send email with generated password
-    const mailOptions = {
-      from: `"Parshuram Dairy" <${process.env.EMAIL_USER}>`, // Use a proper sender name
-      to: email,
-      subject: "Your Delivery Boy Account Credentials",
-      // Add HTML content for better deliverability
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
-          <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="color: #1B5E20;">Parshuram Dairy</h2>
-          </div>
-          <p>Hello <strong>${name}</strong>,</p>
-          <p>Your delivery boy account has been created successfully!</p>
-          <p>Here are your login details:</p>
-          <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Password:</strong> ${generatedPassword}</p>
-          </div>
-          <p>Please change your password after logging in.</p>
-          <p>Best regards,<br>Parshuram Dairy Team</p>
-        </div>
-      `,
-      // Keep the plain text version for email clients that don't support HTML
-      text: `Hello ${name},\n\nYour delivery boy account has been created successfully!\nHere are your login details:\n\nEmail: ${email}\nPassword: ${generatedPassword}\n\nPlease change your password after logging in.\n\nBest regards,\nParshuram Dairy Team`,
-      // Add headers to improve deliverability
-      headers: {
-        'X-Priority': '1',
-        'X-MSMail-Priority': 'High',
-        'Importance': 'High'
-      }
-    };
-
-    // Use promises instead of callbacks for better error handling
-    transporter.sendMail(mailOptions)
-      .then(info => {
-        console.log("Email sent:", info.response);
-      })
-      .catch(err => {
-        console.error("Error sending email:", err);
-      });
-
-    // ✅ Respond to the client
+    // ✅ Respond to the client (no email sending)
     res.status(201).json({
       success: true,
-      message: "Delivery boy created successfully! Login details sent to email.",
-      data: deliveryBoy
+      message: "Delivery boy created successfully! Default password is 123456",
+      data: {
+        id: deliveryBoy._id,
+        name: deliveryBoy.name,
+        email: deliveryBoy.email,
+        phone: deliveryBoy.phone,
+        pincodes: deliveryBoy.pincodes,
+        areas: deliveryBoy.areas,
+        maxOrdersPerDay: deliveryBoy.maxOrdersPerDay,
+        role: deliveryBoy.role
+        // ✅ Don't return password in response
+      }
     });
 
   } catch (error) {
@@ -347,7 +316,6 @@ const createDeliveryBoy = async (req, res) => {
     });
   }
 };
-
 
 // Get all delivery boys
 const getAllDeliveryBoys = async (req, res) => {

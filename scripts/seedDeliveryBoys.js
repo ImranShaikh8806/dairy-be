@@ -5,7 +5,7 @@ const DeliveryBoy = require('../models/DeliveryBoy');
 // Connect to MongoDB
 console.log("db_",process.env.DB_URI);
 
-mongoose.connect("mongodb+srv://wtlmanasitambe:wtl_dairyproducts@parshuram.my8ne.mongodb.net/")
+mongoose.connect("mongodb+srv://imranshaikh8806:HoPfIWRX57D2LhXt@dairyapp.ffe9h1m.mongodb.net/")
   .then(() => console.log('MongoDB connected for seeding delivery boys'))
   .catch(err => {
     console.error('MongoDB connection error:', err);

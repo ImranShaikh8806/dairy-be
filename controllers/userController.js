@@ -121,22 +121,24 @@ const loginUser = async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password (User not found).' });
         }
 
-        // 🔹 Determine role based on the user's role field or collection type
+        // 🔹 Determine role based on the actual role field or collection type
         if (user) {
             // Check if user has a role field, otherwise default to 'user'
             role = user.role || 'user';
         } else if (deliveryBoy) {
-            role = 'DeliveryBoy';
+            // For delivery boys, use their role field or default to 'DeliveryBoy'
+            role = deliveryBoy.role || 'DeliveryBoy';
         }
 
-        console.log("User found:", authUser.email);
+        console.log("User found in collection:", user ? "User" : "DeliveryBoy");
+        console.log("Email:", authUser.email);
         console.log("Role from database:", role);
-        console.log("Stored Password:", authUser.password); // Debugging: Check stored password
-        console.log("Entered Password:", password); // Debugging: Check entered password
+        console.log("Stored Password (hashed):", authUser.password);
+        console.log("Entered Password:", password);
 
         // 🔹 Compare password
         const isPasswordValid = await bcrypt.compare(password, authUser.password);
-        console.log("Password Valid:", isPasswordValid); // Debugging: Check password match
+        console.log("Password Valid:", isPasswordValid);
 
         if (!isPasswordValid) {
             return res.status(401).json({ message: 'Invalid email or password (Wrong password).' });
@@ -166,7 +168,7 @@ const loginUser = async (req, res) => {
                 id: authUser._id,
                 name: authUser.name,
                 email: authUser.email,
-                role, // This will now return the actual role from database
+                role,
             },
             redirect: redirectPath,
         });

@@ -272,16 +272,15 @@ const createDeliveryBoy = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email already exists" });
     }
 
-    // ✅ Use hardcoded password and hash it
+    // ✅ Use hardcoded password as plain text
     const defaultPassword = "123456";
-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
     // ✅ Create new delivery boy
     const deliveryBoy = new DeliveryBoy({
       name,
       email,
       phone,
-      password: hashedPassword, // ✅ Store hashed password
+      password: defaultPassword, // ✅ Store plain text password
       pincodes: pincodes || [],
       areas: areas || [],
       maxOrdersPerDay: maxOrdersPerDay || 20,
